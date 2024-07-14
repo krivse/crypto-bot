@@ -15,7 +15,8 @@ from api.bybit import (
     get_open_order,
     set_leverage,
     get_wallet_balance,
-    set_trading_stop
+    set_trading_stop,
+    cancel_all_orders,
 )
 
 from functions.validate import search_STP, search_coin, search_intro_word, trading_strategy
@@ -43,14 +44,42 @@ async def bybit_on(event):
 
     # Цикл по строкам
     for i in range(len(rows)):
-        # Проверка колонки А:: (index 0) на соответствие id канала / проверка статуса в колонке Y:: (index 24)
+        # Проверка колонки А:: (index 0) на соответствие id канала / проверка статуса в колонке Z:: (index 25)
         if not rows[i]:
             continue
-        if int(rows[i][0]) == chat_id and int(rows[i][24]):
+        if int(rows[i][0]) == chat_id and int(rows[i][25]):
             logging.info(
                 f'Start searching for coin from channel: {rows[i][1]}, '
                 f'current time: {datetime.now().strftime("%H:%M:%S %d.%m.%Y")}'
             )
+
+            # Колонка Y:: передаётся значение "0" для откл. /  "1" для вкл. тестового режима для API bybit (index 24)
+            try:
+                testnet = True if int(rows[i][24]) else False
+            except ValueError:
+                logging.critical('Value may be only 0 or 1')
+                continue
+
+            # Поиск слова / словосочетания для выхода из сделки в колонке W:: (index 22)
+            exitWord = rows[i][22].lower().split('*')
+
+            result = await search_intro_word(exitWord, message, 'column W:: (exit)')
+            if result is True:
+                # В колонке G:: (index 6) H:: (index 7) вводное слово для поиска монеты
+                intro_coin = rows[i][6].lower().split('*') if rows[i][6] != '' else rows[i][7].lower().split('*')
+                # I:: (index 8) Проверка из белого списка
+                white_list = rows[i][8].strip().split('*')
+                # G:: (index 9) Проверка из черного списка
+                black_list = rows[i][9].strip().split('*')
+                # L:: (index 11) Дополнительная обрезка монеты из сообщения
+                trim_coin = rows[i][11].strip().replace('*', '|').lower() if rows[i][11] != '' else ''
+                # Поиск монеты в сообщении по колонкам G H I J
+                symbol = await search_coin(testnet, intro_coin, white_list, black_list, message, trs, trim_coin)
+                if not symbol:
+                    continue
+                logging.info(f'coin found to exit the deal: {symbol}')
+                await cancel_all_orders(testnet, symbol)
+                break
             # Поиск слова / словосочетания в сообщении по колонке С:: (index 2)
             introWord = rows[i][2].lower().split('*')
 
@@ -72,13 +101,6 @@ async def bybit_on(event):
             if not side:
                 continue
 
-            # Колонка X:: передаётся значение "0" для откл. /  "1" для вкл. тестового режима для API bybit (index 23)
-            try:
-                testnet = True if int(rows[i][23]) else False
-            except ValueError:
-                logging.critical('Value may be only 0 or 1')
-                continue
-
             # В колонке G:: (index 6) H:: (index 7) вводное слово для поиска монеты
             intro_coin = rows[i][6].lower().split('*') if rows[i][6] != '' else rows[i][7].lower().split('*')
             # I:: (index 8) Проверка из белого списка
@@ -93,7 +115,7 @@ async def bybit_on(event):
                 continue
             logging.info(f'coin found: {symbol}')
 
-            # Режим для мультиордеров W:: (index 22)
+            # Режим для мультиордеров Y:: (index 23)
             try:
                 if int(rows[i][22]) == 0:
                     # Проверяется открыт ли ордeр на текущую позицию short (Sell) / long (Buy)
@@ -104,8 +126,8 @@ async def bybit_on(event):
                             continue
             except ValueError:
                 logging.critical('Value may be only 0 or 1')
-            # # Если W:: (index 22) != 0 ... продолжается дальнейшая обработка сообщения в режима мультиордеров
-            # # Это означает, что включен режим мультиордеров, т.е. (index 22) == 1
+            # # Если Y:: (index 23) != 0 ... продолжается дальнейшая обработка сообщения в режима мультиордеров
+            # # Это означает, что включен режим мультиордеров, т.е. (index 23) == 1
 
             # Колонка U:: трейлинг стоп-лос значение в % (index 20)
             # Колонка N:: вводное слово для поиска значения стоп-лос из сообщения канала (index 13)
