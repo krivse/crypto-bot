@@ -12,7 +12,7 @@ def get_auto_bot(service: discovery) -> List:
     try:
         result = service.spreadsheets().values().get(
             spreadsheetId=config.google.sheets_id,
-            range="A2:Y999",
+            range="A2:Z999",
             majorDimension='ROWS'
         ).execute()
 
