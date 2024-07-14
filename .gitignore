@@ -162,4 +162,4 @@ anon.session
 .idea
 .DS_store
 logs_data
-logs/logs
+logs/logs/*
