@@ -125,7 +125,9 @@ async def get_open_order(testnet: bool, symbol):
     """Получить открытый ордер для проверки."""
     try:
         response = await asyncio.to_thread(
-            session(testnet).get_open_orders, category='linear', symbol=f'{symbol}USDT'
+            session(testnet).get_open_orders,
+            category='linear',
+            symbol=f'{symbol}USDT'
         )
 
         result = response.get('result').get('list')
@@ -149,7 +151,11 @@ async def get_open_order(testnet: bool, symbol):
 async def get_last_price(testnet: bool, symbol: str) -> float:
     """Получить цену на монету."""
     try:
-        response = await asyncio.to_thread(session(testnet).get_tickers, category='linear', symbol=f'{symbol}USDT')
+        response = await asyncio.to_thread(
+            session(testnet).get_tickers,
+            category='linear',
+            symbol=f'{symbol}USDT'
+        )
         price = response.get('result').get('list')[0].get('lastPrice')
         logging.info(f'Request for a list of coins is successful, last price {symbol}: {price}')
         return float(price)
@@ -174,10 +180,13 @@ async def set_trading_stop(testnet: bool, symbol: str, trailingStop: str, positi
         logging.error(repr(err))
 
 
-def get_open_orders(testnet: bool, symbol: str, side: str) -> Union[List, None]:
+async def get_open_orders(testnet: bool, symbol: str, side: str) -> Union[List, None]:
     """Получить открытые ордера по монете в одном направлении short / long с типом PartialStopLoss."""
     try:
-        response = session(testnet).get_open_orders(category='linear', symbol=symbol)
+        response = await asyncio.to_thread(
+            session(testnet).get_open_orders,
+            category='linear', symbol=symbol
+        )
 
         result = response.get('result').get('list')
 
@@ -201,7 +210,12 @@ def get_open_orders(testnet: bool, symbol: str, side: str) -> Union[List, None]:
 async def get_avgPrice_order(testnet: bool, orderId: str, symbol, trailingStop: int, tickSize: int) -> AnyStr:
     """Получить информацию о закрытом ордере по id"""
     try:
-        response = session(testnet).get_open_orders(category='linear', symbol=f'{symbol}USDT', orderId=orderId)
+        response = await asyncio.to_thread(
+            session(testnet).get_open_orders,
+            category='linear',
+            symbol=f'{symbol}USDT',
+            orderId=orderId
+        )
         result = response.get('result').get('list')
 
         if result:
@@ -215,12 +229,31 @@ async def get_avgPrice_order(testnet: bool, orderId: str, symbol, trailingStop: 
         logging.error(repr(err))
 
 
-def amend_order(testnet: bool, symbol: str, orderId: str, stopLoss: str) -> AnyStr:
+async def amend_order(testnet: bool, symbol: str, orderId: str, stopLoss: str) -> AnyStr:
     """Изменить стоп-лос ордера."""
     try:
-        response = session(testnet).amend_order(
-            category='linear', symbol=symbol, orderId=orderId, triggerPrice=stopLoss
+        response = await asyncio.to_thread(
+            session(testnet).amend_order,
+            category='linear',
+            symbol=symbol,
+            orderId=orderId,
+            triggerPrice=stopLoss
         )
+        return response.get('retMsg')
+    except FailedRequestError as err:
+        logging.error(repr(err))
+
+
+async def cancel_all_orders(testnet: bool, symbol: str) -> AnyStr:
+    """Отменить все ордера для монеты."""
+    try:
+        response = await asyncio.to_thread(
+            session(testnet).cancel_all_orders,
+            category='linear',
+            symbol=f'{symbol}USDT'
+        )
+        order_ids = [i.get('orderId') for i in response.get("result").get("list")]
+        logging.info(f'All orders for {symbol} are canceled, order_ids: {order_ids}')
         return response.get('retMsg')
     except FailedRequestError as err:
         logging.error(repr(err))
