@@ -3,9 +3,7 @@ import os
 import httplib2
 from googleapiclient import discovery
 
-from dotenv import load_dotenv
-
-load_dotenv()
+from config import config
 
 
 def google_sheet_auto_bot() -> discovery:
@@ -16,6 +14,6 @@ def google_sheet_auto_bot() -> discovery:
         'v4',
         http=httplib2.Http(),
         discoveryServiceUrl=discoveryUrl,
-        developerKey=os.getenv('DEVELOPER_API_KEY')
+        developerKey=config.google.api_key
     )
     return service

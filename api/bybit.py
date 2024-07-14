@@ -1,7 +1,7 @@
 import asyncio
-import uuid
-from datetime import datetime
 from typing import List, Set, AnyStr, Union
+
+from pybit.exceptions import FailedRequestError, InvalidRequestError
 
 from connects.bybit_session import session
 from logs.logging_config import logging
@@ -10,47 +10,54 @@ from logs.logging_config import logging
 async def gel_all_coins(testnet: bool, trs) -> Set:
     """Получить все названия монет и закэшировать результат на 24 часа."""
     try:
-        if trs.time_response is None or trs.check_time():
-            response = await asyncio.to_thread(session(testnet).get_instruments_info, category='linear')
-            trs.time_response = datetime.now()
-            logging.info(f'request for a list of coins is successful')
+        if trs.check_time_bybit():
+            response = await asyncio.to_thread(
+                session(testnet).get_instruments_info,
+                category='linear'
+            )
+            logging.info(f'Request for a list of coins is successful')
             for r in response.get('result').get('list'):
                 trs.names.add(r.get('baseCoin'))
                 trs.lotSizeFilter.update({r.get('baseCoin'): r.get('lotSizeFilter')})
                 trs.priceFilter.update({r.get('baseCoin'): r.get('priceFilter')})
-
         return trs.names
-    except Exception as err:
-        logging.error(err)
+    except FailedRequestError as err:
+        logging.error(repr(err))
 
 
 async def get_wallet_balance(testnet: bool) -> float:
     """Получить баланс кошелька."""
+
     try:
-        response = await asyncio.to_thread(session(testnet).get_wallet_balance, accountType="CONTRACT")
+        response = await asyncio.to_thread(
+            session(testnet).get_wallet_balance,
+            accountType="CONTRACT"
+        )
         coins = response.get('result').get('list')[0].get('coin')
 
         for coin in coins:
             if coin.get('coin') == 'USDT':
                 balance = coin.get('walletBalance')
                 logging.info('Balance is obtained successfully')
-
                 return float(balance)
-    except Exception as err:
-        logging.error(err)
+    except FailedRequestError as err:
+        logging.error(repr(err))
 
 
-async def check_leverage(testnet: bool, symbol: str) -> AnyStr:
+async def check_leverage(testnet: bool, symbol: str) -> int:
     try:
-        response = await asyncio.to_thread(session(testnet).get_positions, category='linear', symbol=f'{symbol}USDT')
+        response = await asyncio.to_thread(
+            session(testnet).get_positions,
+            category='linear',
+            symbol=f'{symbol}USDT'
+        )
         for param in response.get('result').get('list'):
             if param.get('leverage'):
-                value = param.get('leverage')
-                logging.info(f'leverage is {value} for {symbol}')
-
+                value = int(param.get('leverage'))
+                logging.info(f'Leverage is {value} for {symbol}')
                 return value
-    except Exception as err:
-        logging.error(err)
+    except FailedRequestError as err:
+        logging.error(repr(err))
 
 
 async def set_leverage(testnet: bool, symbol: str, leverage: str) -> AnyStr:
@@ -63,10 +70,9 @@ async def set_leverage(testnet: bool, symbol: str, leverage: str) -> AnyStr:
             sellLeverage=leverage
         )
         logging.info(f'New leverage {leverage} is set to symbol {symbol}')
-
         return response.get('retMsg')
-    except Exception as err:
-        logging.error(err)
+    except FailedRequestError as err:
+        logging.error(repr(err))
 
 
 async def create_order(testnet: bool,
@@ -110,10 +116,9 @@ async def create_order(testnet: bool,
 
             if tp == 0:
                 firstOrderId = orderId  # забираем первый ордер для выставления trailing-stop
-
         return firstOrderId
-    except Exception as err:
-        logging.error(err)
+    except (FailedRequestError, InvalidRequestError) as err:
+        logging.error(repr(err))
 
 
 async def get_open_order(testnet: bool, symbol):
@@ -136,10 +141,9 @@ async def get_open_order(testnet: bool, symbol):
                 return False
             side = sides.pop()
             logging.info(f'Open one order on side {side}')
-
             return side
-    except Exception as err:
-        logging.error(err)
+    except FailedRequestError as err:
+        logging.error(repr(err))
 
 
 async def get_last_price(testnet: bool, symbol: str) -> float:
@@ -148,10 +152,9 @@ async def get_last_price(testnet: bool, symbol: str) -> float:
         response = await asyncio.to_thread(session(testnet).get_tickers, category='linear', symbol=f'{symbol}USDT')
         price = response.get('result').get('list')[0].get('lastPrice')
         logging.info(f'Request for a list of coins is successful, last price {symbol}: {price}')
-
         return float(price)
-    except Exception as err:
-        logging.error(err)
+    except FailedRequestError as err:
+        logging.error(repr(err))
 
 
 async def set_trading_stop(testnet: bool, symbol: str, trailingStop: str, positionIdx: int) -> None:
@@ -167,8 +170,8 @@ async def set_trading_stop(testnet: bool, symbol: str, trailingStop: str, positi
 
         logging.info(f'Set trailing stop-loss')
         return response.get('retMsg')
-    except Exception as err:
-        logging.error(err)
+    except FailedRequestError as err:
+        logging.error(repr(err))
 
 
 def get_open_orders(testnet: bool, symbol: str, side: str) -> Union[List, None]:
@@ -190,10 +193,9 @@ def get_open_orders(testnet: bool, symbol: str, side: str) -> Union[List, None]:
                 orderIds.append(r.get('orderId'))
 
         logging.info('Orders are obtained for change of stop-loss')
-
         return orderIds
-    except Exception as err:
-        logging.error(err)
+    except FailedRequestError as err:
+        logging.error(repr(err))
 
 
 async def get_avgPrice_order(testnet: bool, orderId: str, symbol, trailingStop: int, tickSize: int) -> AnyStr:
@@ -208,10 +210,9 @@ async def get_avgPrice_order(testnet: bool, orderId: str, symbol, trailingStop: 
             _trailingStop = str(abs(round(entry_price - percent_summ, tickSize)))
 
             logging.info(f'Made a calculation for trailing stop: {_trailingStop}')
-
             return _trailingStop
-    except Exception as err:
-        logging.error(err)
+    except FailedRequestError as err:
+        logging.error(repr(err))
 
 
 def amend_order(testnet: bool, symbol: str, orderId: str, stopLoss: str) -> AnyStr:
@@ -220,22 +221,6 @@ def amend_order(testnet: bool, symbol: str, orderId: str, stopLoss: str) -> AnyS
         response = session(testnet).amend_order(
             category='linear', symbol=symbol, orderId=orderId, triggerPrice=stopLoss
         )
-
         return response.get('retMsg')
-    except Exception as err:
-        logging.error(err)
-
-
-# def history_order(testnet: bool, orderId: str) -> AnyStr:
-#     """Изменить стоп-лос ордера."""
-#     try:
-#         response = session(testnet).get_open_orders(
-#             category='linear', symbol='BTCUSDT')
-#         print(response)
-#         return response.get('retMsg')
-#     except Exception as err:
-#         logging.error(err)
-
-
-# get_open_orders(True, 'BTCUSDT', 'Buy')
-# history_order(True, '962466ec-1124-4a4c-b458-525100b75524')
+    except FailedRequestError as err:
+        logging.error(repr(err))

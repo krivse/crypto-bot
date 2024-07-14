@@ -8,103 +8,108 @@ from api.bybit import gel_all_coins
 
 
 async def search_intro_word(searchWord, message, value_column):
-    try:
-        for sm in range(len(searchWord)):
-            if search(searchWord[sm], message):
-                logging.info(f'the introductory word is found in the {value_column}: {searchWord[sm]}')
-                break
-        else:
-            logging.info(f'the introductory word is not found in the {value_column}: {searchWord}')
-            return False
-    except Exception as err:
-        logging.error(err)
+    for sm in range(len(searchWord)):
+        if search(searchWord[sm], message):
+            logging.info(f'The introductory word is found in the {value_column}: {searchWord[sm]}')
+            break
+    else:
+        logging.info(f'The introductory word is not found in the {value_column}: {searchWord}')
+        return False
+    return True
 
 
 async def trading_strategy(sell, buy, message):
-    try:
-        if '' in sell and '' in buy:
-            logging.warning(f'SHORT and LONG cannot be empty')
-            return False
-        for short in sell:
-            if search(short, message):
-                logging.info(f'SHORT found')
-                return 'Sell'
-        for long in buy:
-            if search(long, message):
-                logging.info(f'LONG found')
-                return 'Buy'
-    except Exception as err:
-        logging.error(err)
+    if '' in sell and '' in buy:
+        logging.warning(f'Both SHORT and LONG cannot be empty')
+        return False
+    for short in sell:
+        if short == '':
+            logging.info(f'SHORT not found')
+            continue
+        if search(short, message):
+            logging.info(f'SHORT found')
+            return 'Sell'
+    for long in buy:
+        if long == '':
+            logging.info(f'LONG not found')
+            continue
+        elif search(long, message):
+            logging.info(f'LONG found')
+            return 'Buy'
+    return False
 
 
 async def search_coin(testnet, intro_coin, white_list, black_list, message, trs, trim_coin):
-    try:
-        logging.info(f'search for an input word for searching for coins: {intro_coin}')
-        for ic in intro_coin:
-            if search(ic, message):
-                logging.info(f'the introductory word is found for the next process to search the coin: {ic}')
-                try:
-                    trim_msg = re.split('\s', message)
-                    logging.info(f'trim the introductory word: {trim_msg}')
-                    if trim_coin != '':
-                        trim_coin = f'|{trim_coin}'
+    logging.info(f'Search for an input word for searching for coins: {intro_coin}')
+    for ic in intro_coin:
+        if search(ic, message):
+            logging.info(f'The introductory word is found for the next process to search the coin: {ic}')
+            try:
+                trim_msg = re.split('\s', message)
+                logging.info(f'Trim the introductory word: {trim_msg}')
+                if trim_coin != '':
+                    trim_coin = f'{trim_coin}|'
+                for i in range(len(trim_msg)):
+                    add_param = re.compile(f'{trim_coin}usdt/|/usdt|usdt|/usd|usd/|usd')
+                    coin = re.findall(add_param, trim_msg[i])
+                    if coin:
+                        coin = trim_msg[i].replace(ic, '').replace(coin[0], '').strip().upper()
+                        logging.info(f'Deduction of coins from the message successfully: {coin}')
+                        break
+                else:
+                    names_coins = await gel_all_coins(testnet, trs)
                     for i in range(len(trim_msg)):
-                        add_param = re.compile(f'usdt/|/usdt|usdt|/usd|usd/|usd{trim_coin}')
-                        coin = re.findall(add_param, trim_msg[i])
-                        if coin:
-                            coin = trim_msg[i].replace(ic, '').replace(coin[0], '').strip().upper()
-                            logging.info(f'deduction of coins from the message successfully: {coin}')
+                        trim_substr = re.sub('[^\w]', '', trim_msg[i]).upper()
+                        if trim_substr in names_coins:
+                            logging.info(
+                                f'The coin is found in the search process'
+                                f' in a message from the temporary storage: {trim_substr}'
+                            )
+                            coin = trim_substr
                             break
                     else:
-                        names_coins = await gel_all_coins(testnet, trs)
-                        for i in range(len(trim_msg)):
-                            trim_substr = re.sub('[^\w]', '', trim_msg[i]).upper()
-                            if trim_substr in names_coins:
-                                logging.info(
-                                    f'The coin is found in the search process'
-                                    f' in a message from the temporary storage: {trim_substr}'
-                                )
-                                coin = trim_substr
-                                break
-                        else:
-                            logging.warning(
-                                f'The coin is not found in the search process in the message'
-                                f' and it is not in the temporary storage: {trim_msg}'
-                            )
-                            return False
-                except Exception as err:
-                    logging.error(err)
-                    return False
-                try:
-                    logging.info('check for availability in white and black lists')
-                    if coin in white_list or (coin not in white_list and coin not in black_list):
+                        logging.warning(
+                            f'The coin is not found in the search process in the message'
+                            f' and it is not in the temporary storage: {trim_msg}'
+                        )
+                        return False
+            except Exception as err:
+                logging.error(err)
+                return False
+            try:
+                logging.info('Check for availability in white and black lists')
+                if coin in white_list or (coin not in white_list and coin not in black_list):
+                    if white_list != ['']:
                         try:
                             white_list.index(coin)
-                            logging.info(f'found coin from the whitelist: {coin}')
+                            logging.info(f'Found coin from the whitelist: {coin}')
                         except ValueError:
-                            try:
-                                names_coins = await gel_all_coins(testnet, trs)
-                                if coin in names_coins:
-                                    logging.info(f'Coin have in temporary storage: {coin}')
-                                    return coin
-                                else:
-                                    logging.warning(f'The coin has no temporary storage: {coin}')
-                                    return False
-                            except Exception as err:
-                                logging.error(err)
-                    elif coin in black_list:
-                        logging.warning(f'found coin from the blacklist: {coin}')
-                        return False
-                except Exception as err:
-                    logging.error(err)
-        else:
-            logging.warning(f'the introductory word for searching coins is not found: {intro_coin}')
-            return False
-    except Exception as err:
-        logging.error(err)
+                            logging.info(f'Not found coin from the whitelist: {coin}')
+                            return False
+                    else:
+                        logging.info(f'White list is empty')
+                    try:
+                        names_coins = await gel_all_coins(testnet, trs)
+                        if coin in names_coins:
+                            logging.info(f'Coin have in temporary storage: {coin}')
+                            return coin
+                        else:
+                            logging.warning(f'The coin has no temporary storage: {coin}')
+                            return False
+                    except Exception as err:
+                        logging.error(err)
+                elif coin in black_list:
+                    logging.warning(f'Found coin from the blacklist: {coin}')
+                    return False
+            except Exception as err:
+                logging.error(err)
+    else:
+        logging.warning(f'The introductory word for searching coins is not found: {intro_coin}')
+        return False
 
 
-async def search_STP(searchWords, message, prefix, splitter) -> Union[List, float]:
+async def search_STP(searchWords, message, prefix, splitter=None, trimmer=None) -> Union[List, float]:
+    """Мультиобработка стоп-лоса, тейк-профита, прайса."""
     try:
         take_profit = []
 
@@ -112,20 +117,22 @@ async def search_STP(searchWords, message, prefix, splitter) -> Union[List, floa
             try:
                 indX = searchWord.index(')')
                 searchWord = rf'{searchWord[:indX]}\{searchWord[indX:]}'
-            except ValueError as err:
+            except ValueError:
                 pass
 
             searchWord = re.compile(searchWord)
             try:
                 actually_word = searchWord.findall(message)[0]
                 logging.info(f'{prefix.capitalize()} found: {actually_word}')
-            except (Exception, IndexError) as err:
-                print(err)
+            except (Exception, IndexError):
                 logging.warning(f'Wrong value "{prefix}" in O:: column, the default value will be 2 %')
                 return False
 
             indexWord = message.find(actually_word)
             format_msg = message[indexWord::].split('\n')
+            # Отсекает лишние символы после указанного слова
+            if trimmer is not None:
+                format_msg = [fm.split('%')[0] for fm in format_msg]
             try:
                 for fm in range(len(format_msg)):
                     try:

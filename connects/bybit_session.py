@@ -1,31 +1,25 @@
+from pybit.exceptions import FailedRequestError
+
+from config import config
 from logs.logging_config import logging
-import os
 
 from pybit.unified_trading import HTTP
-
-from dotenv import load_dotenv
-
-load_dotenv()
 
 
 def session(testnet) -> HTTP:
 
-    api_key = os.getenv('BYBIT_API_KEY')
-    api_secret = os.getenv('BYBIT_API_SECRET')
-    test_net = os.getenv('TESTNET')
+    api_key = config.bybit.api_key
+    api_secret = config.bybit.api_secret
     if testnet:
-        api_key = os.getenv('BYBIT_API_KEY_TESTNET')
-        api_secret = os.getenv('BYBIT_API_SECRET_TESTNET')
-        test_net = testnet
-
+        api_key = config.bybit.api_key_testnet
+        api_secret = config.bybit.api_secret_testnet
     try:
         instance_session = HTTP(
             api_key=api_key,
             api_secret=api_secret,
-            testnet=test_net
+            testnet=testnet
         )
-        logging.info('Connect to Bybit')
-
+        logging.info('Request for Bybit')
         return instance_session
-    except Exception as err:
-        logging.error(err)
+    except FailedRequestError as err:
+        logging.error(repr(err))

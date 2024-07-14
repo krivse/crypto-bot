@@ -1,21 +1,18 @@
-import os
 import time
 from queue import Queue
 
 from pybit.unified_trading import WebSocket
-from dotenv import load_dotenv
 from typing import Union
 
 from api.bybit import amend_order, get_open_orders
+from config import config
 from logs.logging_config import logging
-
-load_dotenv()
 
 
 class BybitWebSocket:
-    API_KEY = os.getenv('BYBIT_API_KEY')
-    API_SECRET = os.getenv('BYBIT_API_SECRET')
-    TEST_NET = os.getenv('TESTNET')
+    API_KEY = config.bybit.api_key
+    API_SECRET = config.bybit.api_secret
+    TEST_NET = config.bybit.testnet  # Удален, нужно решить какие данные взять
     QUEUE_DATA: Union[Queue, int] = None
 
     def __init__(self, testnet: bool = None):
@@ -23,8 +20,8 @@ class BybitWebSocket:
 
     def _connect(self):
         if self.testnet:
-            self.API_KEY = os.getenv('BYBIT_API_KEY_TESTNET')
-            self.API_SECRET = os.getenv('BYBIT_API_SECRET_TESTNET')
+            self.API_KEY = config.bybit.api_key_testnet
+            self.API_SECRET = config.bybit.api_secret_testnet
             self.TEST_NET = self.testnet
         try:
             return WebSocket(

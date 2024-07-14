@@ -2,7 +2,8 @@ import asyncio
 import multiprocessing as mp
 
 from connects.bybit_websocket import BybitWebSocket
-from functions.temporary_storage import TemporaryRequestStorage
+from connects.google_sheets import google_sheet_auto_bot
+
 from logs.logging_config import logging
 
 from connects.telethon_client import client
@@ -19,16 +20,15 @@ async def create_process(ws, queue):
 
 
 async def main():
-    trs = TemporaryRequestStorage()  # экземпляр временного хранилища
-
     queue = mp.Queue()  # для передачи объектов между объектом BybitWebSocker и обработчиком событий
 
     ws = BybitWebSocket()  # экземпляр bybit web-socket в тестовом режиме
-    await create_process(ws, queue)
-    ws_test = BybitWebSocket(testnet=True)  # экземпляр bybit web-socket # в реальном режиме
-    await create_process(ws_test, queue)  # запуск процесса
-
-    await client(trs=trs, ws=ws, queue=queue)  # запускаем цикл событий для обработки событий / передаём объекты
+    # await create_process(ws, queue)
+    # ws_test = BybitWebSocket(testnet=True)  # экземпляр bybit web-socket в реальном режиме
+    # await create_process(ws_test, queue)  # запуск процесса
+    service = google_sheet_auto_bot()
+    # запускаем цикл событий для обработки событий / передаём объекты в качестве контекста
+    await client(ws=ws, queue=queue, service=service)
 
 
 if __name__ == '__main__':
