@@ -7,12 +7,12 @@ from connects.bybit_session import session
 from logs.logging_config import logging
 
 
-async def gel_all_coins(testnet: bool, trs) -> Set:
+async def gel_all_coins(demo: bool, trs) -> Set:
     """Получить все названия монет и закэшировать результат на 24 часа."""
     try:
         if trs.check_time_bybit():
             response = await asyncio.to_thread(
-                session(testnet).get_instruments_info,
+                session(demo).get_instruments_info,
                 category='linear'
             )
             logging.info(f'Request for a list of coins is successful')
@@ -25,13 +25,13 @@ async def gel_all_coins(testnet: bool, trs) -> Set:
         logging.error(repr(err))
 
 
-async def get_wallet_balance(testnet: bool) -> float:
+async def get_wallet_balance(demo: bool) -> float:
     """Получить баланс кошелька."""
 
     try:
         response = await asyncio.to_thread(
-            session(testnet).get_wallet_balance,
-            accountType="CONTRACT"
+            session(demo).get_wallet_balance,
+            accountType="UNIFIED"
         )
         coins = response.get('result').get('list')[0].get('coin')
 
@@ -44,10 +44,10 @@ async def get_wallet_balance(testnet: bool) -> float:
         logging.error(repr(err))
 
 
-async def check_leverage(testnet: bool, symbol: str) -> int:
+async def check_leverage(demo: bool, symbol: str) -> int:
     try:
         response = await asyncio.to_thread(
-            session(testnet).get_positions,
+            session(demo).get_positions,
             category='linear',
             symbol=f'{symbol}USDT'
         )
@@ -60,10 +60,10 @@ async def check_leverage(testnet: bool, symbol: str) -> int:
         logging.error(repr(err))
 
 
-async def set_leverage(testnet: bool, symbol: str, leverage: str) -> AnyStr:
+async def set_leverage(demo: bool, symbol: str, leverage: str) -> AnyStr:
     try:
         response = await asyncio.to_thread(
-            session(testnet).set_leverage,
+            session(demo).set_leverage,
             category='linear',
             symbol=f'{symbol}USDT',
             buyLeverage=leverage,
@@ -75,7 +75,7 @@ async def set_leverage(testnet: bool, symbol: str, leverage: str) -> AnyStr:
         logging.error(repr(err))
 
 
-async def create_order(testnet: bool,
+async def create_order(demo: bool,
                        side: str,  # тип ордeра short / long
                        symbol: str,  # название монеты, например: BTC
                        qty: str,  # кол-во, например: 0.03
@@ -89,7 +89,7 @@ async def create_order(testnet: bool,
         firstOrderId = ''
         for tp in range(len(takeProfit)):
             response = await asyncio.to_thread(
-                session(testnet).place_order,
+                session(demo).place_order,
                 category='linear',
                 symbol=f'{symbol}USDT',
                 side=side,
@@ -121,11 +121,11 @@ async def create_order(testnet: bool,
         logging.error(repr(err))
 
 
-async def get_open_order(testnet: bool, symbol):
+async def get_open_order(demo: bool, symbol):
     """Получить открытый ордер для проверки."""
     try:
         response = await asyncio.to_thread(
-            session(testnet).get_open_orders,
+            session(demo).get_open_orders,
             category='linear',
             symbol=f'{symbol}USDT'
         )
@@ -148,11 +148,11 @@ async def get_open_order(testnet: bool, symbol):
         logging.error(repr(err))
 
 
-async def get_last_price(testnet: bool, symbol: str) -> float:
+async def get_last_price(demo: bool, symbol: str) -> float:
     """Получить цену на монету."""
     try:
         response = await asyncio.to_thread(
-            session(testnet).get_tickers,
+            session(demo).get_tickers,
             category='linear',
             symbol=f'{symbol}USDT'
         )
@@ -163,11 +163,11 @@ async def get_last_price(testnet: bool, symbol: str) -> float:
         logging.error(repr(err))
 
 
-async def set_trading_stop(testnet: bool, symbol: str, trailingStop: str, positionIdx: int) -> None:
+async def set_trading_stop(demo: bool, symbol: str, trailingStop: str, positionIdx: int) -> None:
     """Установить трейлинг стоп-лос."""
     try:
         response = await asyncio.to_thread(
-            session(testnet).set_trading_stop,
+            session(demo).set_trading_stop,
             category='linear',
             symbol=f'{symbol}USDT',
             trailingStop=trailingStop,
@@ -180,11 +180,11 @@ async def set_trading_stop(testnet: bool, symbol: str, trailingStop: str, positi
         logging.error(repr(err))
 
 
-async def get_open_orders(testnet: bool, symbol: str, side: str) -> Union[List, None]:
+async def get_open_orders(demo: bool, symbol: str, side: str) -> Union[List, None]:
     """Получить открытые ордера по монете в одном направлении short / long с типом PartialStopLoss."""
     try:
         response = await asyncio.to_thread(
-            session(testnet).get_open_orders,
+            session(demo).get_open_orders,
             category='linear', symbol=symbol
         )
 
@@ -207,11 +207,11 @@ async def get_open_orders(testnet: bool, symbol: str, side: str) -> Union[List, 
         logging.error(repr(err))
 
 
-async def get_avgPrice_order(testnet: bool, orderId: str, symbol, trailingStop: int, tickSize: int) -> AnyStr:
+async def get_avgPrice_order(demo: bool, orderId: str, symbol, trailingStop: int, tickSize: int) -> AnyStr:
     """Получить информацию о закрытом ордере по id"""
     try:
         response = await asyncio.to_thread(
-            session(testnet).get_open_orders,
+            session(demo).get_open_orders,
             category='linear',
             symbol=f'{symbol}USDT',
             orderId=orderId
@@ -229,11 +229,11 @@ async def get_avgPrice_order(testnet: bool, orderId: str, symbol, trailingStop: 
         logging.error(repr(err))
 
 
-async def amend_order(testnet: bool, symbol: str, orderId: str, stopLoss: str) -> AnyStr:
+async def amend_order(demo: bool, symbol: str, orderId: str, stopLoss: str) -> AnyStr:
     """Изменить стоп-лос ордера."""
     try:
         response = await asyncio.to_thread(
-            session(testnet).amend_order,
+            session(demo).amend_order,
             category='linear',
             symbol=symbol,
             orderId=orderId,
@@ -244,11 +244,11 @@ async def amend_order(testnet: bool, symbol: str, orderId: str, stopLoss: str) -
         logging.error(repr(err))
 
 
-async def cancel_all_orders(testnet: bool, symbol: str) -> AnyStr:
+async def cancel_all_orders(demo: bool, symbol: str) -> AnyStr:
     """Отменить все ордера для монеты."""
     try:
         response = await asyncio.to_thread(
-            session(testnet).cancel_all_orders,
+            session(demo).cancel_all_orders,
             category='linear',
             symbol=f'{symbol}USDT'
         )

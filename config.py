@@ -17,11 +17,11 @@ class Telegram:
 
 @dataclass
 class Bybit:
-    testnet: bool
+    demo: bool
     api_key: str
     api_secret: str
-    api_key_testnet: str
-    api_secret_testnet: str
+    api_key_demo: str
+    api_secret_demo: str
     timeout: int
 
 
@@ -48,11 +48,11 @@ def get_config():
                 password=os.getenv('PASSWORD'),
             ),
             bybit=Bybit(
-                testnet=bool(os.getenv('TESTNET')),
+                demo=bool(os.getenv('demo')),
                 api_key=os.getenv('BYBIT_API_KEY'),
                 api_secret=os.getenv('BYBIT_API_SECRET'),
-                api_key_testnet=os.getenv('BYBIT_API_KEY_TESTNET'),
-                api_secret_testnet=os.getenv('BYBIT_API_SECRET_TESTNET'),
+                api_key_demo=os.getenv('BYBIT_API_KEY_DEMO'),
+                api_secret_demo=os.getenv('BYBIT_API_SECRET_DEMO'),
                 timeout=int(os.getenv('TIMEOUT_BYBIT'))
             ),
             google=Google(

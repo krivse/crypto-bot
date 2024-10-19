@@ -12,7 +12,7 @@ from logs.logging_config import logging
 class BybitWebSocket:
     API_KEY = config.bybit.api_key
     API_SECRET = config.bybit.api_secret
-    TEST_NET = config.bybit.testnet  # Удален, нужно решить какие данные взять
+    TEST_NET = config.bybit.demo  # Удален, нужно решить какие данные взять
     QUEUE_DATA: Union[Queue, int] = None
 
     def __init__(self, testnet: bool = None):

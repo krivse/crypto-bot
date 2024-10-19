@@ -39,7 +39,7 @@ async def trading_strategy(sell, buy, message):
     return False
 
 
-async def search_coin(testnet, intro_coin, white_list, black_list, message, trs, trim_coin):
+async def search_coin(demo, intro_coin, white_list, black_list, message, trs, trim_coin):
     logging.info(f'Search for an input word for searching for coins: {intro_coin}')
     for ic in intro_coin:
         if search(ic, message):
@@ -57,7 +57,7 @@ async def search_coin(testnet, intro_coin, white_list, black_list, message, trs,
                         logging.info(f'Deduction of coins from the message successfully: {coin}')
                         break
                 else:
-                    names_coins = await gel_all_coins(testnet, trs)
+                    names_coins = await gel_all_coins(demo, trs)
                     for i in range(len(trim_msg)):
                         trim_substr = re.sub('[^\w]', '', trim_msg[i]).upper()
                         if trim_substr in names_coins:
@@ -89,7 +89,7 @@ async def search_coin(testnet, intro_coin, white_list, black_list, message, trs,
                     else:
                         logging.info(f'White list is empty')
                     try:
-                        names_coins = await gel_all_coins(testnet, trs)
+                        names_coins = await gel_all_coins(demo, trs)
                         if coin in names_coins:
                             logging.info(f'Coin have in temporary storage: {coin}')
                             return coin

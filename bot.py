@@ -24,7 +24,7 @@ async def main():
 
     ws = BybitWebSocket()  # экземпляр bybit web-socket в тестовом режиме
     # await create_process(ws, queue)
-    # ws_test = BybitWebSocket(testnet=True)  # экземпляр bybit web-socket в реальном режиме
+    # ws_test = BybitWebSocket(demo=True)  # экземпляр bybit web-socket в реальном режиме
     # await create_process(ws_test, queue)  # запуск процесса
     service = google_sheet_auto_bot()
     # запускаем цикл событий для обработки событий / передаём объекты в качестве контекста

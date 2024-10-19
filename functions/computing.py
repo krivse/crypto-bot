@@ -20,7 +20,7 @@ async def calculate_quantity(
 
     Пример. Банк 100$. Если указано Ставка$, то входит на 20$. Реальный вход у него получается на 1$ с 20 плечом.
     Если указана Ставка% на 1%, то входит по умолчанию с 20 плечом на 1%. Это также получается на 1$ с 20 плечом на 20$.
-    :param balance: int баланс кошелька
+    :param balance: float баланс кошелька
     :param r_dollar: int ставка в долларах
     :param r_percent: float ставка в процентах
     :param leverage: int кредитное плечо
@@ -32,7 +32,8 @@ async def calculate_quantity(
     """
     try:
         if not isinstance(stopLoss, str):  # установлен трейлинг для стоп-лос
-            if isinstance(stopLoss, int):  # Расчёт стоп-лос от процента
+            # Если стоп-лос имеет тип str, то значение не пересчитывается
+            if isinstance(stopLoss, float):  # Расчёт стоп-лос от процента
                 if side == 'Buy':
                     stopLoss = round(lastPrice - (lastPrice / 100 * stopLoss), 6)
                 else:
