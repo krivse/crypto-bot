@@ -248,7 +248,7 @@ async def bybit_on(event):
                     firstOrderId = await create_order(
                         demo, side, symbol, quantity, stopLoss, takeProfit, positionIdx, 'Market'
                     )
-                    if trailingStop.isdigit():
+                    if trailingStop.isdigit() and firstOrderId:
                         _trailingStop = await get_avgPrice_order(demo, firstOrderId, symbol, int(trailingStop), tickSize)
                         await set_trading_stop(demo, symbol, _trailingStop, positionIdx)
                 else:  # отложенный ордер
