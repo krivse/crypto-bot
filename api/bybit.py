@@ -257,3 +257,32 @@ async def cancel_all_orders(demo: bool, symbol: str) -> AnyStr:
         return response.get('retMsg')
     except FailedRequestError as err:
         logging.error(repr(err))
+
+
+async def get_open_order_to_exit(testnet: bool, symbol: str) -> AnyStr:
+    """Получить открытый ордер для выхода."""
+    try:
+        response = await asyncio.to_thread(
+            session(testnet).get_open_orders,
+            category='linear',
+            symbol=f'{symbol}USDT'
+        )
+        print(response)
+        result = response.get('result').get('list')
+        print(result)
+    except FailedRequestError as err:
+        logging.error(repr(err))
+
+
+async def cancel_order(testnet: bool, symbol: str, orderId: str) -> AnyStr:
+    """Отменить ордер."""
+    try:
+        response = await asyncio.to_thread(
+            session(testnet).cancel_order,
+            category='linear',
+            symbol=symbol,
+            orderId=orderId
+        )
+        return response.get('retMsg')
+    except FailedRequestError as err:
+        logging.error(repr(err))

@@ -15,7 +15,8 @@ from api.bybit import (
     get_open_order,
     set_leverage,
     get_wallet_balance,
-    set_trading_stop
+    set_trading_stop,
+    cancel_all_orders, cancel_order, get_open_order_to_exit,  # get_open_order_to_exit,
 )
 
 from functions.validate import search_STP, search_coin, search_intro_word, trading_strategy
@@ -77,7 +78,10 @@ async def bybit_on(event):
                 if not symbol:
                     continue
                 logging.info(f'coin found to exit the deal: {symbol}')
-
+                #await get_open_order_to_exit(testnet, symbol)
+                # await cancel_all_orders(testnet, symbol)
+                # await cancel_order(testnet, f'{symbol}USDT', '2b383ca5-6a6e-42ac-a12d-df4e06b100b5')
+                #break
             # Поиск слова / словосочетания в сообщении по колонке С:: (index 2)
             introWord = rows[i][2].lower().split('*')
 
@@ -127,7 +131,7 @@ async def bybit_on(event):
             # Если Y:: (index 23) != 0 ... продолжается дальнейшая обработка сообщения в режиме мультиордеров
             # Это означает, что включен режим мультиордеров, т.е. (index 23) == 1
 
-            # Колонка U:: рейлинг стоп-лос значение в % (index 20)
+            # Колонка U:: трейлинг стоп-лос значение в % (index 20)
             # Колонка N:: вводное слово для поиска значения стоп-лос из сообщения канала (index 13)
             # Колона P:: заранее определено значение стоп-лос для текущего канала (index 15)
             trailingStop = ''
