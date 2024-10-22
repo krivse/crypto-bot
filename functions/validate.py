@@ -1,5 +1,3 @@
-from typing import List, Union
-
 from logs.logging_config import logging
 import re
 from re import search
@@ -7,7 +5,7 @@ from re import search
 from api.bybit import gel_all_coins
 
 
-async def search_intro_word(searchWord, message, value_column):
+async def search_intro_word(searchWord, message, value_column) -> bool:
     for sm in range(len(searchWord)):
         if search(searchWord[sm], message):
             logging.info(f'The introductory word is found in the {value_column}: {searchWord[sm]}')
@@ -18,7 +16,7 @@ async def search_intro_word(searchWord, message, value_column):
     return True
 
 
-async def trading_strategy(sell, buy, message):
+async def trading_strategy(sell, buy, message) -> bool | str:
     if '' in sell and '' in buy:
         logging.warning(f'Both SHORT and LONG cannot be empty')
         return False
@@ -39,7 +37,7 @@ async def trading_strategy(sell, buy, message):
     return False
 
 
-async def search_coin(demo, intro_coin, white_list, black_list, message, trs, trim_coin):
+async def search_coin(demo, intro_coin, white_list, black_list, message, trs, trim_coin) -> bool | str:
     logging.info(f'Search for an input word for searching for coins: {intro_coin}')
     for ic in intro_coin:
         if search(ic, message):
@@ -108,7 +106,7 @@ async def search_coin(demo, intro_coin, white_list, black_list, message, trs, tr
         return False
 
 
-async def search_STP(searchWords, message, prefix, splitter=None, trimmer=None) -> Union[List, float]:
+async def search_STP(searchWords, message, prefix, splitter=None, trimmer=None) -> list | float:
     """Мультиобработка стоп-лоса, тейк-профита, прайса."""
     try:
         take_profit = []

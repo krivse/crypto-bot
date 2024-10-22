@@ -16,7 +16,7 @@ from api.bybit import (
     set_leverage,
     get_wallet_balance,
     set_trading_stop,
-    cancel_all_orders, cancel_order, get_open_order_to_exit,  # get_open_order_to_exit,
+    cancel_all_orders, cancel_order, get_open_order_to_exit,
 )
 
 from functions.validate import search_STP, search_coin, search_intro_word, trading_strategy
@@ -167,12 +167,17 @@ async def bybit_on(event):
                     logging.info(f'Set take-profit: {takeProfit}')
             except ValueError:
                 logging.critical('Value may be only number')
-            splitter = rows[i][19] if rows[i][19] != '' else ' '  # разделитель для целей колонки M:: (index 12)
-            trimmer = rows[i][21] if rows[i][21] != '' else ''  # дополительная обрезка для целей V:: (index 21)
+            # T:: (index 19) разделитель для целей колонки M:: (index 12)
+            splitter = rows[i][19] if rows[i][19] != '' else ' '
+            # V:: (index 21) дополнительная обрезка для целей M:: (index 21)
+            trimmer = rows[i][21] if rows[i][21] != '' else ''
             if takeProfit == '':
-                entryWord_target = rows[i][12].strip().lower().split('*')
+                entryWord_target = rows[i][12].strip().lower().split('*') # цели M:: (index 12)
                 if entryWord_target != '':
                     takeProfit = await search_STP(entryWord_target, message, 'take-profit', splitter, trimmer)
+                    takeProfit = list(set(takeProfit))[:len(entryWord_target)]
+                    logging.info(f'Set take-profit with quantity params of {len(entryWord_target)} '
+                                 f'from column M (index 12): {takeProfit}')
                     if not takeProfit:
                         takeProfit = 2.0
                         logging.info(f'Set take-profit: {takeProfit}')
