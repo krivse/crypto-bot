@@ -1,4 +1,5 @@
 import asyncio
+from sys import prefix
 from typing import List, Union
 
 from pybit.exceptions import FailedRequestError, InvalidRequestError
@@ -16,7 +17,7 @@ async def gel_all_coins(demo: bool, trs: TemporaryRequestStorage) -> set:
     :param trs: TemporaryRequestStorage. Временное хранилище запроса
     :return: Set. Список названий монет."""
     try:
-        if trs.check_time_bybit():
+        if trs.check_time(prefix='bybit'):
             response = await asyncio.to_thread(
                 session(demo).get_instruments_info,
                 category='linear'

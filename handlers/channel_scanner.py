@@ -1,4 +1,5 @@
 from datetime import datetime
+from sys import prefix
 
 from functions.computing import calculate_quantity
 from api.google_sheet import get_auto_bot
@@ -32,7 +33,7 @@ async def bybit_on(event):
     # ws = event.client.ws
 
     # Проверка времени запроса в гугл-таблицу
-    if trs.check_time_google():
+    if trs.check_time(prefix='google'):
         # Параметры обработки данных из гугл-таблицы по заданному интервалу в секундах
         trs.google_param = get_auto_bot(service)
     rows = trs.google_param
