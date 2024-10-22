@@ -1,14 +1,20 @@
 import asyncio
-from typing import List, Set, AnyStr, Union
+from typing import List, Union
 
 from pybit.exceptions import FailedRequestError, InvalidRequestError
 
 from connects.bybit_session import session
+from functions.temporary_storage import TemporaryRequestStorage
 from logs.logging_config import logging
 
 
-async def gel_all_coins(demo: bool, trs) -> Set:
-    """Получить все названия монет и закэшировать результат на 24 часа."""
+async def gel_all_coins(demo: bool, trs: TemporaryRequestStorage) -> set:
+    """Получить все названия монет на бирже c ценой, мин. и макс. кол-вом для покупки
+    и закэшировать результат на 24 часа.
+
+    :param demo: bool. Режим демо
+    :param trs: TemporaryRequestStorage. Временное хранилище запроса
+    :return: Set. Список названий монет."""
     try:
         if trs.check_time_bybit():
             response = await asyncio.to_thread(
@@ -26,8 +32,10 @@ async def gel_all_coins(demo: bool, trs) -> Set:
 
 
 async def get_wallet_balance(demo: bool) -> float:
-    """Получить баланс кошелька."""
+    """Получить баланс кошелька в паре с USDT.
 
+    :param demo: bool. Режим демо
+    :return: float. Баланс кошелька."""
     try:
         response = await asyncio.to_thread(
             session(demo).get_wallet_balance,
@@ -45,6 +53,11 @@ async def get_wallet_balance(demo: bool) -> float:
 
 
 async def check_leverage(demo: bool, symbol: str) -> int:
+    """Получить текущее плечо для пары.
+
+    :param demo: bool. Режим демо
+    :param symbol: str. Название пары
+    :return: int. Текущее плечо."""
     try:
         response = await asyncio.to_thread(
             session(demo).get_positions,
@@ -60,9 +73,15 @@ async def check_leverage(demo: bool, symbol: str) -> int:
         logging.error(repr(err))
 
 
-async def set_leverage(demo: bool, symbol: str, leverage: str) -> AnyStr:
+async def set_leverage(demo: bool, symbol: str, leverage: str) -> None:
+    """Установить плечо.
+
+    :param demo: bool. Режим демо
+    :param symbol: str. Название пары
+    :param leverage: str. Плечо для установки
+    :return: None. Установленное плечо."""
     try:
-        response = await asyncio.to_thread(
+        await asyncio.to_thread(
             session(demo).set_leverage,
             category='linear',
             symbol=f'{symbol}USDT',
@@ -70,21 +89,34 @@ async def set_leverage(demo: bool, symbol: str, leverage: str) -> AnyStr:
             sellLeverage=leverage
         )
         logging.info(f'New leverage {leverage} is set to symbol {symbol}')
-        return response.get('retMsg')
     except FailedRequestError as err:
         logging.error(repr(err))
 
 
-async def create_order(demo: bool,
-                       side: str,  # тип ордeра short / long
-                       symbol: str,  # название монеты, например: BTC
-                       qty: str,  # кол-во, например: 0.03
-                       stopLoss: float,  # предел для продажи, например: 36.702
-                       takeProfit: list,  # кол-во цен и ордеров, например: [36.714, 36.726, 36.736]
-                       positionIdx: int,  # хеджирование (открытие ордера в обе стороны)
-                       orderType: str,  # тип ордера, например: Market / Limit
-                       price: float = None) -> AnyStr:  # цена ордера, например: 36.710
-    """Выставить ордер по рынку / отложенный ордер."""
+async def create_order(
+        demo: bool,
+        side: str,
+        symbol: str,
+        qty: str,
+        stopLoss: float,
+        takeProfit: list,
+        positionIdx: int,
+        orderType: str,
+        price: float = None
+) -> str:
+    """Выставить ордер по рынку / отложенный ордер.
+
+    :param demo: bool. Режим демо
+    :param side: str. Тип ордера short / long
+    :param symbol: str. Название монеты, например: BTC
+    :param qty: str. Кол-во, например: 0.03
+    :param stopLoss: float. Предел для продажи, например: 36.702
+    :param takeProfit: list. Цена и ордер, например: [36.714, 36.726, 36.736]
+    :param positionIdx: int. Хеджирование (открытие ордера в обе стороны)
+    :param orderType: str. Тип ордера: Market / Limit
+    :param price: float. Цена ордера, например: 36.710
+
+    :return: str. Идентификатор ордера для треейлинга (только по маркету)."""
     try:
         firstOrderId = ''
         for tp in range(len(takeProfit)):
@@ -105,9 +137,9 @@ async def create_order(demo: bool,
 
             orderId = response.get('result').get('orderId')
 
-            info = f'{orderType} - {side} - {symbol} - ' \
-                   f'{qty} - {price} - {stopLoss} - ' \
-                   f'{takeProfit[tp]} - {orderType} - {orderId}'
+            info = f'{orderType=} - {side=} - {symbol=} - ' \
+                   f'{qty=} - {price=} - {stopLoss=} - ' \
+                   f'{takeProfit[tp]=} - {orderType=} - {orderId=}'
 
             if response.get('retMsg') == 'OK':
                 logging.info(info)
@@ -121,8 +153,14 @@ async def create_order(demo: bool,
         logging.error(repr(err))
 
 
-async def get_open_order(demo: bool, symbol):
-    """Получить открытый ордер для проверки."""
+async def get_open_order(demo: bool, symbol: str) -> bool | str:
+    """Получить открытый ордер для проверки.
+
+    :param demo: bool. Режим демо
+    :symbol: str. Название пары
+    :return: bool | str. True - нет открытого ордера.
+                         False - есть открытый ордера в обе стороны.
+                         str - тип открытого ордера."""
     try:
         response = await asyncio.to_thread(
             session(demo).get_open_orders,
@@ -149,7 +187,11 @@ async def get_open_order(demo: bool, symbol):
 
 
 async def get_last_price(demo: bool, symbol: str) -> float:
-    """Получить цену на монету."""
+    """Получить цену на монету.
+
+    :param demo: bool. Режим демо
+    :param symbol: str. Название пары
+    :return: float. Последняя цена монеты."""
     try:
         response = await asyncio.to_thread(
             session(demo).get_tickers,
@@ -164,9 +206,15 @@ async def get_last_price(demo: bool, symbol: str) -> float:
 
 
 async def set_trading_stop(demo: bool, symbol: str, trailingStop: str, positionIdx: int) -> None:
-    """Установить трейлинг стоп-лос."""
+    """Установить трейлинг стоп-лос.
+
+    :param demo: bool. Режим демо
+    :param symbol: str. Название пары
+    :param trailingStop: str. Трейлинг стоп-лос
+    :param positionIdx: int. Хедж режим 1: Buy side / 2 Sell side
+    :return: None. Установленный трейлинг стоп-лос."""
     try:
-        response = await asyncio.to_thread(
+        await asyncio.to_thread(
             session(demo).set_trading_stop,
             category='linear',
             symbol=f'{symbol}USDT',
@@ -174,14 +222,18 @@ async def set_trading_stop(demo: bool, symbol: str, trailingStop: str, positionI
             positionIdx=positionIdx,
         )
 
-        logging.info(f'Set trailing stop-loss')
-        return response.get('retMsg')
+        logging.info(f'Set trailing stop-loss {trailingStop}')
     except FailedRequestError as err:
         logging.error(repr(err))
 
 
-async def get_open_orders(demo: bool, symbol: str, side: str) -> Union[List, None]:
-    """Получить открытые ордера по монете в одном направлении short / long с типом PartialStopLoss."""
+async def get_open_orders(demo: bool, symbol: str, side: str) -> List | None:
+    """Получить открытые ордера по монете в одном направлении short / long с типом PartialStopLoss.
+
+    :param demo: bool. Режим демо
+    :param symbol: str. Название пары
+    :param side: str. Направление: long / short
+    :return: list. Идентификаторы открытых ордеров."""
     try:
         response = await asyncio.to_thread(
             session(demo).get_open_orders,
@@ -192,6 +244,7 @@ async def get_open_orders(demo: bool, symbol: str, side: str) -> Union[List, Non
 
         orderIds = []
         for r in result:
+            # TODO: delete it later
             # entry_price = float(result[0].get('avgPrice'))
             # check_new_stop_loss = float(result[0].get('stopLoss'))
             # print(entry_price, check_new_stop_loss)
@@ -207,8 +260,15 @@ async def get_open_orders(demo: bool, symbol: str, side: str) -> Union[List, Non
         logging.error(repr(err))
 
 
-async def get_avgPrice_order(demo: bool, orderId: str, symbol, trailingStop: int, tickSize: int) -> AnyStr:
-    """Получить информацию о закрытом ордере по id"""
+async def get_avgPrice_order(demo: bool, orderId: str, symbol, trailingStop: int, tickSize: int) -> str:
+    """Получить информацию о закрытом ордере по id и рассчитать трейлинг стоп.
+
+    :param demo: bool. Режим демо
+    :param orderId: str. Идентификатор ордера
+    :param symbol: str. Название пары
+    :param trailingStop: int. Трейлинг стоп-лос
+    :param tickSize: int. Шаг цены
+    :return: str. Стоп-лос с учетом трейлинга."""
     try:
         response = await asyncio.to_thread(
             session(demo).get_open_orders,
@@ -229,7 +289,7 @@ async def get_avgPrice_order(demo: bool, orderId: str, symbol, trailingStop: int
         logging.error(repr(err))
 
 
-async def amend_order(demo: bool, symbol: str, orderId: str, stopLoss: str) -> AnyStr:
+async def amend_order(demo: bool, symbol: str, orderId: str, stopLoss: str) -> str:
     """Изменить стоп-лос ордера."""
     try:
         response = await asyncio.to_thread(
@@ -244,7 +304,7 @@ async def amend_order(demo: bool, symbol: str, orderId: str, stopLoss: str) -> A
         logging.error(repr(err))
 
 
-async def cancel_all_orders(demo: bool, symbol: str) -> AnyStr:
+async def cancel_all_orders(demo: bool, symbol: str) -> str:
     """Отменить все ордера для монеты."""
     try:
         response = await asyncio.to_thread(
@@ -259,7 +319,7 @@ async def cancel_all_orders(demo: bool, symbol: str) -> AnyStr:
         logging.error(repr(err))
 
 
-async def get_open_order_to_exit(testnet: bool, symbol: str) -> AnyStr:
+async def get_open_order_to_exit(testnet: bool, symbol: str) -> str:
     """Получить открытый ордер для выхода."""
     try:
         response = await asyncio.to_thread(
@@ -274,7 +334,7 @@ async def get_open_order_to_exit(testnet: bool, symbol: str) -> AnyStr:
         logging.error(repr(err))
 
 
-async def cancel_order(testnet: bool, symbol: str, orderId: str) -> AnyStr:
+async def cancel_order(testnet: bool, symbol: str, orderId: str) -> str:
     """Отменить ордер."""
     try:
         response = await asyncio.to_thread(
