@@ -106,7 +106,7 @@ async def search_coin(demo, intro_coin, white_list, black_list, message, trs, tr
         return False
 
 
-async def search_STP(searchWords, message, prefix, splitter=None, trimmer=None) -> list | float:
+async def search_STP(searchWords, message, prefix, splitter=None, trimmer=None) -> list | bool | float:
     """Мультиобработка стоп-лоса, тейк-профита, прайса."""
     try:
         take_profit = []

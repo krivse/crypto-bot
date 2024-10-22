@@ -1,9 +1,16 @@
+# Api id and hash for telegram, also phone number and password to log in with 2fa enabled
 API_ID=
 API_HASH=
+PHONE=
+PASSWORD=
+# Api-key and id table for google-sheets
 DEVELOPER_API_KEY=
 SHEETS_ID=
+# Api-key, secret-key for bybit and demo bybit
 BYBIT_API_KEY=
 BYBIT_API_SECRET=
-BYBIT_API_KEY_TESTNET=
-BYBIT_API_SECRET_TESTNET=
-TESTNET=True
+BYBIT_API_KEY_DEMO=
+BYBIT_API_SECRET_DEMO=
+# General settings
+TIMEOUT_BYBIT=86400  # for updating list of coins
+TIMEOUT_GOOGLE=20  # for updating table
