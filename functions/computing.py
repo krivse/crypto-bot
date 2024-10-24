@@ -7,7 +7,7 @@ async def calculate_quantity(
         r_dollar: [str, int],
         r_percent: [str, float],
         leverage: [str, float],
-        stopLoss: [str, int, float],
+        stopLoss: [str, float],
         takeProfit: [int, [float]],
         lastPrice: [float],
         side: str

@@ -148,14 +148,15 @@ async def bybit_on(event):
                 if stopLoss == '':
                     entryWord_stopLoss = rows[i][13].strip().lower().split('*')
                     if entryWord_stopLoss != '':
-                        # Приведение к типу str для отключения расчёта стоп-лоса
-                        stopLoss = str(await search_STP(entryWord_stopLoss, message, 'stop-loss'))
+                        stopLoss = await search_STP(entryWord_stopLoss, message, 'stop-loss')
+                        # Если нашел стоп-лос, то приведение к типу str для отключения расчёта стоп-лоса из сообщения
+                        stopLoss = str(stopLoss) if stopLoss else stopLoss  # []
                         if not stopLoss:
-                            stopLoss = 2
-                            logging.info(f'Set stop-loss: {stopLoss}')
+                            stopLoss = 2.0
+                            logging.info(f'Set stop-loss: {stopLoss} %')
                     else:
-                        stopLoss = 2
-                        logging.info(f'Set stop-loss: {stopLoss}')
+                        stopLoss = 2.0
+                        logging.info(f'Set stop-loss: {stopLoss} %')
 
             # Цели - при достижении критерия (цены) закрывается ордер
             # Колонка M:: вводное слово для поиска значения цели из сообщения канала (index 12) - наименьший приоритет
@@ -181,10 +182,10 @@ async def bybit_on(event):
                                  f'from column M (index 12): {takeProfit}')
                     if not takeProfit:
                         takeProfit = 2.0
-                        logging.info(f'Set take-profit: {takeProfit}')
+                        logging.info(f'Set take-profit: {takeProfit} %')
                 else:
                     takeProfit = 2.0
-                    logging.info(f'Set take-profit: {takeProfit}')
+                    logging.info(f'Set take-profit: {takeProfit} %')
 
             # Создать ордер по рынку / отложенный ордер
             # В колонке K:: поле == '' - ордер по рынку / поле != '' - отложенный ордер (index10)
