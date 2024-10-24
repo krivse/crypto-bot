@@ -195,7 +195,7 @@ async def bybit_on(event):
             try:
                 rate_dollar = int(rows[i][16]) if rows[i][16] != '' else ''  # ставка в $
                 rate_percent = float(rows[i][17]) if rows[i][17] != '' else ''  # ставка в %
-                leverage = int(rows[i][18]) if rows[i][18] != '' else ''  # плечо
+                leverage = float(rows[i][18]) if rows[i][18] != '' else ''  # плечо
             except ValueError:
                 logging.critical('Value may be only number')
             balance = await get_wallet_balance(demo)  # баланс кошелька
@@ -226,7 +226,14 @@ async def bybit_on(event):
             if qty.get('leverage') is not None:
                 checkLeverage = await check_leverage(demo, symbol)  # проверить уставленное плечо для монеты
                 if checkLeverage != qty.get('leverage'):
-                    await set_leverage(demo, symbol, str(qty.get('leverage')))  # установить новое кредитное плечо
+                    leverage, leverageFilter = qty.get('leverage'), trs.leverageFilter.get(symbol)
+                    if leverage < float(leverageFilter['minLeverage']):
+                        leverage = leverageFilter['minLeverage']
+                        logging.info(f'Set min leverage: {leverage} for {symbol}')
+                    elif leverage > float(leverageFilter['maxLeverage']):
+                        leverage = leverageFilter['maxLeverage']
+                        logging.info(f'Set max leverage: {leverage} for {symbol}')
+                    await set_leverage(demo, symbol, str(leverage))  # установить новое кредитное плечо
 
             logging.info(f'Params for order: {qty}')
             if qty != {}:

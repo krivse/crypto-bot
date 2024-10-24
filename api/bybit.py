@@ -27,6 +27,7 @@ async def gel_all_coins(demo: bool, trs: TemporaryRequestStorage) -> set:
                 trs.names.add(r.get('baseCoin'))
                 trs.lotSizeFilter.update({r.get('baseCoin'): r.get('lotSizeFilter')})
                 trs.priceFilter.update({r.get('baseCoin'): r.get('priceFilter')})
+                trs.leverageFilter.update({r.get('baseCoin'): r.get('leverageFilter')})
         return trs.names
     except FailedRequestError as err:
         logging.error(repr(err))
@@ -53,12 +54,12 @@ async def get_wallet_balance(demo: bool) -> float:
         logging.error(repr(err))
 
 
-async def check_leverage(demo: bool, symbol: str) -> int:
+async def check_leverage(demo: bool, symbol: str) -> float:
     """Получить текущее плечо для пары.
 
     :param demo: bool. Режим демо
     :param symbol: str. Название пары
-    :return: int. Текущее плечо."""
+    :return: float. Текущее плечо."""
     try:
         response = await asyncio.to_thread(
             session(demo).get_positions,
@@ -67,7 +68,7 @@ async def check_leverage(demo: bool, symbol: str) -> int:
         )
         for param in response.get('result').get('list'):
             if param.get('leverage'):
-                value = int(param.get('leverage'))
+                value = float(param.get('leverage'))
                 logging.info(f'Leverage is {value} for {symbol}')
                 return value
     except FailedRequestError as err:

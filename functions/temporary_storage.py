@@ -15,6 +15,7 @@ class TemporaryRequestStorage:
     names: set = field(default_factory=set)
     lotSizeFilter: dict = field(default_factory=dict)
     priceFilter: dict = field(default_factory=dict)
+    leverageFilter: dict = field(default_factory=dict)
     google_param: list = field(default_factory=list)
 
     def check_time(self, prefix: str) -> bool:

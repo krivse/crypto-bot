@@ -6,7 +6,7 @@ async def calculate_quantity(
         balance: float,
         r_dollar: [str, int],
         r_percent: [str, float],
-        leverage: [str, int],
+        leverage: [str, float],
         stopLoss: [str, int, float],
         takeProfit: [int, [float]],
         lastPrice: [float],
@@ -23,12 +23,12 @@ async def calculate_quantity(
     :param balance: float баланс кошелька
     :param r_dollar: int ставка в долларах
     :param r_percent: float ставка в процентах
-    :param leverage: int кредитное плечо
+    :param leverage: float кредитное плечо
     :param stopLoss: float % от суммы / цена из сообщения
     :param takeProfit: float % от суммы / цена из сообщения
     :param lastPrice: последняя цена на бирже
     :param side: стратегия торговли
-    :return: dict {'quantity': float, 'leverage': int, 'stopLoss': float, take_profit: list[float]}
+    :return: dict {'quantity': float, 'leverage': float, 'stopLoss': float, take_profit: list[float]}
     """
     try:
         if not isinstance(stopLoss, str):  # установлен трейлинг для стоп-лос
@@ -49,14 +49,14 @@ async def calculate_quantity(
     except (TypeError, ValueError) as err:
         logging.error(err)
     try:
-        if all([isinstance(r_dollar, int), isinstance(r_percent, float), isinstance(leverage, int)]):
+        if all([isinstance(r_dollar, int), isinstance(r_percent, float), isinstance(leverage, float)]):
             try:
                 summ = balance / 100 * r_percent
                 quantity = summ / lastPrice
                 return {'quantity': quantity, 'leverage': leverage, 'stopLoss': stopLoss, 'takeProfit': takeProfit}
             except (TypeError, ValueError) as err:
                 logging.error(err)
-        elif all([isinstance(r_percent, float), isinstance(leverage, int)]):
+        elif all([isinstance(r_percent, float), isinstance(leverage, float)]):
             try:
                 summ = balance / 100 * r_percent
                 quantity = summ / lastPrice
